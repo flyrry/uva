@@ -22,6 +22,7 @@ inline short ones_count(short m)
   bits += !!(m & 0x2000);
   bits += !!(m & 0x4000);
   bits += !!(m & 0x8000);
+  return bits;
 }
 
 // return number as if it was given in hex representation

@@ -16,38 +16,34 @@ typedef struct {
   double x, y;
 } point;
 
-bool hit_test(rect& r, point& p)
+bool hit_test(rect r, point p)
 {
-  if (p.x < r.brx &&
-      p.x > r.tlx &&
-      p.y < r.bry &&
-      p.y > r.tly)
-    return true;
-  return false;
+  return (p.x > r.tlx &&
+          p.x < r.brx &&
+          p.y < r.tly &&
+          p.y > r.bry);
 }
 
 int main()
 {
   ios::sync_with_stdio(false);
-  char type;
+  char type = 'r';
   list<rect> rectangles;
   rect r;
   point p;
+  size_t r_idx = 1, p_idx = 1;
   for (;;) {
-    cin >> type;
-    size_t r_idx = 1, p_idx = 1;
+    if (type != '*')
+      cin >> type;
     if (type == 'r') {
       cin >> r.tlx >> r.tly >> r.brx >> r.bry;
-      r.id = r_idx;
+      r.id = r_idx++;
       rectangles.push_back(r);
-      ++r_idx;
     } else {
       cin >> p.x >> p.y;
-      if (p.x == INVALID_POINT &&
-          p.y == INVALID_POINT) {
+      if (p.x == INVALID_POINT && p.y == INVALID_POINT) {
         break;
       } else {
-        // test which rectangles contain this point
         list<rect>::iterator it = rectangles.begin();
         bool found = false;
         while ((it = find_if(it, rectangles.end(), bind2nd(ptr_fun(hit_test), p))) != rectangles.end()) {
@@ -57,8 +53,8 @@ int main()
         }
         if (!found)
           cout << "Point " << p_idx << " is not contained in any figure" << endl;
+        ++p_idx;
       }
-      ++p_idx;
     }
   }
 

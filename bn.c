@@ -66,21 +66,37 @@ char* bignum_stringify(bignum_t* b)
   return number;
 }
 
-void bignum_negate(bignum_t* b)
+bignum_t* bignum_negate(bignum_t* b)
 {
   b->neg = !b->neg;
+  return b;
 }
 
 /* 1 - not equal, 0 - equal */
-/*
 int bignum_compare(bignum_t* a, bignum_t* b)
 {
-  return (a->digits != b->digits) ? 1 : memcmp(a->d, b->d, a->digits) ? 1 : 0;
+  int i;
+  if (a->digits < b->digits)
+    return (2*b->neg - 1);
+  if (a->digits > b->digits)
+    return (-2*a->neg + 1);
+  for (i = a->digits - 1; i >= 0; ++i)
+  {
+    if (a->d[i] < b->d[i])
+      return -1;
+    if (a->d[i] > b->d[i])
+      return 1;
+  }
+  return 0;
 }
-*/
 
 bignum_t* bignum_add(bignum_t* a, bignum_t* b)
 {
+  if (a->neg && !b->neg)
+    return bignum_substract(b, a);
+  if (!a->neg && b->neg)
+    return bignum_substract(a, b);
+
   int i, max_digits = (a->digits > b->digits) ? a->digits : b->digits;
   bignum_t* result = bignum_reserve(max_digits + 1);
   result->digits = max_digits + 1; /* expect possible carry */
@@ -92,34 +108,65 @@ bignum_t* bignum_add(bignum_t* a, bignum_t* b)
     bb = (i < b->digits) ? (b->neg ? -b->d[i] : b->d[i]) : 0;
     sum = ba + bb + bcarry;
     bcarry = sum / 10;
+    sum = (sum < 0) ? -sum : sum;
     result->d[i] = sum % 10;
   }
 
   if (!result->d[result->digits - 1])
     result->digits--; /* no carry on last digit */
+  result->neg = (a->neg && b->neg);
 
   return result;
 }
 
 bignum_t* bignum_substract(bignum_t* a, bignum_t* b)
 {
-  return NULL;
+  if (a->neg && b->neg)
+    return bignum_substract(bignum_negate(b), a);
+  if (a->neg && !b->neg)
+    return bignum_negate(bignum_add(bignum_negate(a), b));
+  if (bignum_compare(a, b) == -1)
+    return bignum_negate(bignum_substract(b, a));
+
+  int i, max_digits = (a->digits > b->digits) ? a->digits : b->digits;
+  bignum_t* result = bignum_reserve(max_digits + 1);
+  result->digits = max_digits + 1; /* expect possible carry */
+
+  bignum_bit_t ba, bb, bcarry = 0, diff;
+  for (i = 0; i < result->digits; ++i)
+  {
+    ba = (i < a->digits) ? a->d[i] : 0;
+    bb = (i < b->digits) ? b->d[i] : 0;
+    diff = ba - bb - bcarry;
+    bcarry = diff < 0;
+    diff = (diff < 0) ? 10 + diff : diff;
+    result->d[i] = diff;
+  }
+
+  if (!result->d[result->digits - 1])
+    result->digits--;
+  return result;
 }
 
 
 int main()
 {
-  bignum_t* a = bignum_create(94510);
+  bignum_t* a = bignum_create(-15509);
   ppb(a);
   char* a_str = bignum_stringify(a);
   printf("number: %s alloced: %u, neg: %d, digits: %u\n", a_str, a->alloced, a->neg, a->digits);
-  bignum_t* b = bignum_create(15509);
+  bignum_t* b = bignum_create(94510);
   ppb(b);
   bignum_t* result = bignum_add(a, b);
   char* b_str = bignum_stringify(b);
   char* r_str = bignum_stringify(result);
   ppb(result);
   printf("%s + %s = %s\n", a_str, b_str, r_str);
+  printf("%s ~ %s = %d\n", a_str, b_str, bignum_compare(a, b));
+  bignum_t* diff = bignum_substract(a, b);
+  printf("%s - %s = ", a_str, b_str);
+  ppb(diff);
+  ppb(diff);
   free(a_str);
   free(b_str);
   free(r_str);

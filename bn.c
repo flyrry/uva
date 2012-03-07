@@ -81,32 +81,23 @@ int bignum_compare(bignum_t* a, bignum_t* b)
 
 bignum_t* bignum_add(bignum_t* a, bignum_t* b)
 {
-  if (a->neg && !b->neg)
-    return bignum_substract(b, a);
-  else if (!a->neg && b->neg)
-    return bignum_substract(a, b);
-  
-  int i;
-  bignum_bit_t carry_bit = 0;
-  bignum_t* bigger = (a->digits > b->digits) ? a : b;
-  bignum_t* smaller = (bigger == a) ? b : a;
-  bignum_t* result = bignum_reserve(bigger->digits + 1);
-  result->digits = bigger->digits + 1;
+  int i, max_digits = (a->digits > b->digits) ? a->digits : b->digits;
+  bignum_t* result = bignum_reserve(max_digits + 1);
+  result->digits = max_digits + 1; /* expect possible carry */
+
+  bignum_bit_t ba, bb, bcarry = 0, sum;
   for (i = 0; i < result->digits; ++i)
   {
-    if (i < smaller->digits)
-    {
-      result->d[i] = (bigger->d[i] + smaller->d[i] + carry_bit) % 10;
-      carry_bit = (bigger->d[i] + smaller->d[i]) / 10;
-    }
-    else
-    {
-      result->d[i] = (bigger->d[i] + carry_bit) % 10;
-      carry_bit = 0;
-    }
+    ba = (i < a->digits) ? (a->neg ? -a->d[i] : a->d[i]) : 0;
+    bb = (i < b->digits) ? (b->neg ? -b->d[i] : b->d[i]) : 0;
+    sum = ba + bb + bcarry;
+    bcarry = sum / 10;
+    result->d[i] = sum % 10;
   }
+
   if (!result->d[result->digits - 1])
-    result->digits--;
+    result->digits--; /* no carry on last digit */
+
   return result;
 }
 
@@ -118,7 +109,7 @@ bignum_t* bignum_substract(bignum_t* a, bignum_t* b)
 
 int main()
 {
-  bignum_t* a = bignum_create(34510);
+  bignum_t* a = bignum_create(94510);
   ppb(a);
   char* a_str = bignum_stringify(a);
   printf("number: %s alloced: %u, neg: %d, digits: %u\n", a_str, a->alloced, a->neg, a->digits);

@@ -12,7 +12,7 @@ void ppb(bignum_t* b)
     printf("-");
   for (i = b->digits - 1; i >= 0; --i)
     printf("%d", b->d[i]);
-  printf("\n");
+  printf(" [negative: %d, digits: %d, alloced: %d]\n", b->neg, b->digits, b->alloced);
 }
 /*
  * remove for lib version
@@ -32,6 +32,17 @@ bignum_t* bignum_reserve(int digits)
   b->d = (bignum_bit_t*) calloc(digits, sizeof(bignum_bit_t));
   b->alloced = digits;
   return b;
+}
+
+/* shallow copy */
+bignum_t* bignum_copy_s(bignum_t* b)
+{
+  bignum_t* copy = (bignum_t*) calloc(1, sizeof(bignum_t));
+  copy->d = b->d;
+  copy->digits = b->digits;
+  copy->neg = b->neg;
+  copy->alloced = b->alloced;
+  return copy;
 }
 
 void bignum_destroy(bignum_t* b)
@@ -92,10 +103,11 @@ int bignum_compare(bignum_t* a, bignum_t* b)
 
 bignum_t* bignum_add(bignum_t* a, bignum_t* b)
 {
+  /* shallow copy arguments before negating to leave them unaffected */
   if (a->neg && !b->neg)
-    return bignum_substract(b, a);
+    return bignum_substract(b, bignum_negate(bignum_copy_s(a)));
   if (!a->neg && b->neg)
-    return bignum_substract(a, b);
+    return bignum_substract(a, bignum_copy_s(bignum_negate(b)));
 
   int i, max_digits = (a->digits > b->digits) ? a->digits : b->digits;
   bignum_t* result = bignum_reserve(max_digits + 1);
@@ -121,10 +133,13 @@ bignum_t* bignum_add(bignum_t* a, bignum_t* b)
 
 bignum_t* bignum_substract(bignum_t* a, bignum_t* b)
 {
+  /* shallow copy arguments before negating to leave them unaffected */
   if (a->neg && b->neg)
-    return bignum_substract(bignum_negate(b), a);
+    return bignum_substract(bignum_copy_s(bignum_negate(b)), a);
   if (a->neg && !b->neg)
-    return bignum_negate(bignum_add(bignum_negate(a), b));
+    return bignum_negate(bignum_add(bignum_copy_s(bignum_negate(a)), b));
+  if (!a->neg && b->neg)
+    return bignum_add(a, bignum_copy_s(bignum_negate(b)));
   if (bignum_compare(a, b) == -1)
     return bignum_negate(bignum_substract(b, a));
 
@@ -148,30 +163,48 @@ bignum_t* bignum_substract(bignum_t* a, bignum_t* b)
   return result;
 }
 
+void bignum_split(bignum_t* b, bignum_t** p1, bignum_t** p2)
+{
+  int i;
+  if (b->digits < 2)
+  {
+    p1 = p2 = NULL;
+    return;
+  }
+  *p1 = bignum_reserve(b->digits / 2);
+  (*p1)->digits = b->digits / 2;
+  *p2 = bignum_reserve(b->digits - (b->digits / 2));
+  (*p2)->digits = b->digits - (b->digits / 2);
+  for (i = 0; i < b->digits/2; ++i)
+    (*p1)->d[i] = b->d[i];
+  for (; i < b->digits; ++i)
+    (*p2)->d[i - b->digits/2] = b->d[i];
+}
+
+bignum_t* bignum_multiply(bignum_t* x, bignum_t* y)
+{
+  bignum_t* x1, *x2, *y1, *y2;
+  bignum_split(a, a1, a2);
+}
 
 int main()
 {
   bignum_t* a = bignum_create(-15509);
+  printf("a:");
   ppb(a);
-  char* a_str = bignum_stringify(a);
-  printf("number: %s alloced: %u, neg: %d, digits: %u\n", a_str, a->alloced, a->neg, a->digits);
   bignum_t* b = bignum_create(94510);
+  printf("b:");
   ppb(b);
   bignum_t* result = bignum_add(a, b);
-  char* b_str = bignum_stringify(b);
-  char* r_str = bignum_stringify(result);
+  printf("a + b = ");
   ppb(result);
-  printf("%s + %s = %s\n", a_str, b_str, r_str);
-  printf("%s ~ %s = %d\n", a_str, b_str, bignum_compare(a, b));
+  printf("a ~ b = %d\n", bignum_compare(a,b));
   bignum_t* diff = bignum_substract(a, b);
-  printf("%s - %s = ", a_str, b_str);
+  printf("a - b = ");
   ppb(diff);
-  ppb(diff);
-  free(a_str);
-  free(b_str);
-  free(r_str);
-  bignum_destroy(b);
-  bignum_destroy(result);
-  bignum_destroy(a);
+  bignum_t* first, *second;
+  bignum_split(b, &first, &second);
+  ppb(first);
+  ppb(second);
   return 0;
 }

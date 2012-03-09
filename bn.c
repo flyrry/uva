@@ -75,6 +75,8 @@ void bignum_set(bignum_t* b, int number)
     b->d[b->digits++] = (number % 10);
     number /= 10;
   }
+  if (!b->digits) /* number = 0 case */
+    b->digits = 1;
 }
 
 char* bignum_stringify(bignum_t* b)
@@ -122,7 +124,7 @@ bignum_t* bignum_add(bignum_t* a, bignum_t* b)
   if (a->neg && !b->neg)
     return bignum_substract(b, bignum_negate(bignum_copy_s(a)));
   if (!a->neg && b->neg)
-    return bignum_substract(a, bignum_copy_s(bignum_negate(b)));
+    return bignum_substract(a, bignum_negate(bignum_copy_s(b)));
 
   int i, max_digits = (a->digits > b->digits) ? a->digits : b->digits;
   bignum_t* result = bignum_reserve(max_digits + 1);
@@ -139,8 +141,8 @@ bignum_t* bignum_add(bignum_t* a, bignum_t* b)
     result->d[i] = sum % 10;
   }
 
-  if (!result->d[result->digits - 1])
-    result->digits--; /* no carry on last digit */
+  while (!result->d[result->digits - 1] && (result->digits - 1)) /* trim trailing 0s */
+    --result->digits;
   result->neg = (a->neg && b->neg);
 
   return result;
@@ -149,12 +151,22 @@ bignum_t* bignum_add(bignum_t* a, bignum_t* b)
 bignum_t* bignum_substract(bignum_t* a, bignum_t* b)
 {
   /* shallow copy arguments before negating to leave them unaffected */
+  /*
   if (a->neg && b->neg)
     return bignum_substract(bignum_copy_s(bignum_negate(b)), a);
   if (a->neg && !b->neg)
     return bignum_negate(bignum_add(bignum_copy_s(bignum_negate(a)), b));
   if (!a->neg && b->neg)
     return bignum_add(a, bignum_copy_s(bignum_negate(b)));
+  if (bignum_compare(a, b) == -1)
+    return bignum_negate(bignum_substract(b, a));
+  */
+  if (a->neg && b->neg)
+    return bignum_substract(bignum_negate(bignum_copy_s(b)), a);
+  if (a->neg && !b->neg)
+    return bignum_negate(bignum_add(bignum_negate(bignum_copy_s(a)), b));
+  if (!a->neg && b->neg)
+    return bignum_add(a, bignum_negate(bignum_copy_s(b)));
   if (bignum_compare(a, b) == -1)
     return bignum_negate(bignum_substract(b, a));
 
@@ -173,7 +185,8 @@ bignum_t* bignum_substract(bignum_t* a, bignum_t* b)
     result->d[i] = diff;
   }
 
-  while (!result->d[result->digits - 1] && --result->digits);
+  while (!result->d[result->digits - 1] && (result->digits - 1)) /* trim trailing 0s */
+    --result->digits;
   return result;
 }
 
@@ -211,14 +224,12 @@ bignum_t* bignum_pad(bignum_t* b, int n, int digit)
 {
   int i;
   bignum_t* padded = bignum_reserve(b->digits + n);
+  padded->neg = b->neg;
   for (i = 0; i < b->digits; ++i)
     padded->d[i] = b->d[i];
   for (; i < n + b->digits; ++i)
-  {
     padded->d[i] = digit;
-  }
   padded->digits = i;
-  padded->neg = b->neg;
   return padded;
 }
 
@@ -262,8 +273,11 @@ bignum_t* bignum_multiply(bignum_t* x, bignum_t* y)
   ppb(y);
   */
   /* pad to equal length */
-  bignum_t* xp = bignum_pad(x, x->digits - y->digits, 0);
-  bignum_t* yp = bignum_pad(y, y->digits - x->digits, 0);
+  /*
+  printf("padding by %d\n", x->digits - y->digits);
+  */
+  bignum_t* xp = bignum_pad(x, y->digits - x->digits, 0);
+  bignum_t* yp = bignum_pad(y, x->digits - y->digits, 0);
   bignum_split(xp, &x2, &x1);
   bignum_split(yp, &y2, &y1);
   /*
@@ -277,38 +291,53 @@ bignum_t* bignum_multiply(bignum_t* x, bignum_t* y)
   printf("y2: "); ppb(y2);
   */
   bignum_t* a = bignum_multiply(x1, y1);
+  /*
   printf("a: "); ppb(a);
+  */
   bignum_t* b = bignum_multiply(x2, y2);
+  /*
   printf("b: "); ppb(b);
+  */
   bignum_t* s1 = bignum_add(x1, x2);
   bignum_t* s2 = bignum_add(y1, y2);
   bignum_t* c = bignum_multiply(s1, s2);
+  /*
   printf("c: "); ppb(c);
+  */
   bignum_t* sab = bignum_add(a, b);
+  /*
   printf("a+b: "); ppb(sab);
+  */
   bignum_t* k = bignum_substract(c, sab);
+  /*
   printf("k: "); ppb(k);
+  */
   /*
   int shift_digits = min(max(x1->digits, x2->digits), max(y1->digits, y2->digits));
   */
   int shift_digits = min(x1->digits, x2->digits);
+  /*
   printf("shifting by %d and %d\n", shift_digits*2, shift_digits);
+  */
   bignum_t* a_rebased = bignum_shift(a, 2 * shift_digits);
   bignum_t* k_rebased = bignum_shift(k, shift_digits);
   bignum_t* ak = bignum_add(a_rebased, k_rebased);
   bignum_t* result = bignum_add(ak, b);
+  /*
   printf("result: ");
   ppb(result);
+  */
   /*bignum_destroy_multiple(16, x1, x2, y1, y2, a, b, s1, s2, c, sab, k, _100, _10, a100, k10, ak);*/
+  printf("%d %d\n", x->neg, y->neg);
+  result->neg = (x->neg ^ y->neg);
   return result;
 }
 
 int main()
 {
   /* -15500, -155 */
-  bignum_t* a = bignum_create(-155);
+  bignum_t* a = bignum_create(-15500);
   printf("a:");
-  ppb(bignum_pad(a, 1, 0));
   ppb(a);
   /* 94510 */
   bignum_t* b = bignum_create(94510);
@@ -321,16 +350,20 @@ int main()
   bignum_t* diff = bignum_substract(a, b);
   printf("a - b = ");
   ppb(diff);
+  ppb(a);
+  ppb(b);
   bignum_t* first, *second;
   bignum_split(a, &first, &second);
+  printf("first half: ");
   ppb(first);
+  printf("second half: ");
   ppb(second);
   printf("* 100 = ");
   ppb(bignum_shift(first, 2));
   printf("* 10 = ");
   ppb(bignum_shift(second, 1));
   printf("a * b = ");
-  bignum_t* x = bignum_create(1234);
+  bignum_t* x = bignum_create(-1234);
   bignum_t* y = bignum_create(5678);
   bignum_t* product = bignum_multiply(a, b);
   ppb(product);

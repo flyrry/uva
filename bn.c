@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include "bn.h"
 
 /*
@@ -51,6 +52,20 @@ void bignum_destroy(bignum_t* b)
     free(b);
 }
 
+void bignum_destroy_multiple(int n_args, ...)
+{
+  va_list ap;
+  va_start(ap, n_args);
+  int i;
+  for (i = 0; i < n_args; ++i)
+  {
+    bignum_t* b = va_arg(ap, bignum_t*);
+    if (b)
+      free(b);
+  }
+  va_end(ap);
+}
+
 void bignum_set(bignum_t* b, int number)
 {
   if (number < 0)
@@ -91,7 +106,7 @@ int bignum_compare(bignum_t* a, bignum_t* b)
     return (2*b->neg - 1);
   if (a->digits > b->digits)
     return (-2*a->neg + 1);
-  for (i = a->digits - 1; i >= 0; ++i)
+  for (i = a->digits - 1; i >= 0; --i)
   {
     if (a->d[i] < b->d[i])
       return -1;
@@ -158,8 +173,7 @@ bignum_t* bignum_substract(bignum_t* a, bignum_t* b)
     result->d[i] = diff;
   }
 
-  if (!result->d[result->digits - 1])
-    result->digits--;
+  while (!result->d[result->digits - 1] && --result->digits);
   return result;
 }
 
@@ -181,17 +195,122 @@ void bignum_split(bignum_t* b, bignum_t** p1, bignum_t** p2)
     (*p2)->d[i - b->digits/2] = b->d[i];
 }
 
+bignum_t* bignum_shift(bignum_t* b, int times)
+{
+  int i;
+  bignum_t* result = bignum_reserve(b->digits + times);
+  result->digits = b->digits + times;
+  for (i = 0; i < times; ++i)
+    result->d[i] = 0;
+  for (; i < result->digits; ++i)
+    result->d[i] = b->d[i - times];
+  return result;
+}
+
+bignum_t* bignum_pad(bignum_t* b, int n, int digit)
+{
+  int i;
+  bignum_t* padded = bignum_reserve(b->digits + n);
+  for (i = 0; i < b->digits; ++i)
+    padded->d[i] = b->d[i];
+  for (; i < n + b->digits; ++i)
+  {
+    padded->d[i] = digit;
+  }
+  padded->digits = i;
+  padded->neg = b->neg;
+  return padded;
+}
+
+bignum_t* take_n(bignum_t* b, int times)
+{
+  int i;
+  bignum_t* result = NULL;
+  if (!times)
+    return bignum_create(0);
+  bignum_t* sum = bignum_create(0);
+  for (i = 0; i < times; ++i)
+  {
+    result = bignum_add(sum, b);
+    bignum_destroy(sum);
+    sum = result;
+  }
+  return result;
+}
+
+int min(int a, int b)
+{
+  return (a < b) ? a : b;
+}
+
+int max(int a, int b)
+{
+  return (a > b) ? a : b;
+}
+
 bignum_t* bignum_multiply(bignum_t* x, bignum_t* y)
 {
   bignum_t* x1, *x2, *y1, *y2;
-  bignum_split(a, a1, a2);
+  if (x->digits == 1)
+    return take_n(y, x->d[0]);
+  if (y->digits == 1)
+    return take_n(x, y->d[0]);
+  /*
+  printf("x: ");
+  ppb(x);
+  printf("y: ");
+  ppb(y);
+  */
+  /* pad to equal length */
+  bignum_t* xp = bignum_pad(x, x->digits - y->digits, 0);
+  bignum_t* yp = bignum_pad(y, y->digits - x->digits, 0);
+  bignum_split(xp, &x2, &x1);
+  bignum_split(yp, &y2, &y1);
+  /*
+  bignum_split(x, &x2, &x1);
+  bignum_split(y, &y2, &y1);
+  */
+  /*
+  printf("x1: "); ppb(x1);
+  printf("x2: "); ppb(x2);
+  printf("y1: "); ppb(y1);
+  printf("y2: "); ppb(y2);
+  */
+  bignum_t* a = bignum_multiply(x1, y1);
+  printf("a: "); ppb(a);
+  bignum_t* b = bignum_multiply(x2, y2);
+  printf("b: "); ppb(b);
+  bignum_t* s1 = bignum_add(x1, x2);
+  bignum_t* s2 = bignum_add(y1, y2);
+  bignum_t* c = bignum_multiply(s1, s2);
+  printf("c: "); ppb(c);
+  bignum_t* sab = bignum_add(a, b);
+  printf("a+b: "); ppb(sab);
+  bignum_t* k = bignum_substract(c, sab);
+  printf("k: "); ppb(k);
+  /*
+  int shift_digits = min(max(x1->digits, x2->digits), max(y1->digits, y2->digits));
+  */
+  int shift_digits = min(x1->digits, x2->digits);
+  printf("shifting by %d and %d\n", shift_digits*2, shift_digits);
+  bignum_t* a_rebased = bignum_shift(a, 2 * shift_digits);
+  bignum_t* k_rebased = bignum_shift(k, shift_digits);
+  bignum_t* ak = bignum_add(a_rebased, k_rebased);
+  bignum_t* result = bignum_add(ak, b);
+  printf("result: ");
+  ppb(result);
+  /*bignum_destroy_multiple(16, x1, x2, y1, y2, a, b, s1, s2, c, sab, k, _100, _10, a100, k10, ak);*/
+  return result;
 }
 
 int main()
 {
-  bignum_t* a = bignum_create(-15509);
+  /* -15500, -155 */
+  bignum_t* a = bignum_create(-155);
   printf("a:");
+  ppb(bignum_pad(a, 1, 0));
   ppb(a);
+  /* 94510 */
   bignum_t* b = bignum_create(94510);
   printf("b:");
   ppb(b);
@@ -203,8 +322,17 @@ int main()
   printf("a - b = ");
   ppb(diff);
   bignum_t* first, *second;
-  bignum_split(b, &first, &second);
+  bignum_split(a, &first, &second);
   ppb(first);
   ppb(second);
+  printf("* 100 = ");
+  ppb(bignum_shift(first, 2));
+  printf("* 10 = ");
+  ppb(bignum_shift(second, 1));
+  printf("a * b = ");
+  bignum_t* x = bignum_create(1234);
+  bignum_t* y = bignum_create(5678);
+  bignum_t* product = bignum_multiply(a, b);
+  ppb(product);
   return 0;
 }

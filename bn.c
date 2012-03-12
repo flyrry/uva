@@ -6,16 +6,14 @@
 
 int min(int a, int b);
 int max(int a, int b);
-void bignum_split(bignum_t b, bignum_t* p1, bignum_t* p2);
-bignum_t bignum_shift(bignum_t b, int times);
-bignum_t take_n(bignum_t b, int times);
+bignum_t take_n(bignum_t x, int times);
 
 bignum_t bignum_create(int number)
 {
   return bignum_set(bignum_reserve(BIT_CHUNK_SIZE), number);
 }
 
-bignum_t bignum_create_from_string(char* str)
+bignum_t bignum_create_from_string(const char* str)
 {
   int has_sign = 0, i;
   size_t len = strlen(str);
@@ -76,7 +74,7 @@ bignum_t bignum_set(bignum_t b, int number)
   return b;
 }
 
-const char* bignum_stringify(bignum_t b)
+char* bignum_stringify(bignum_t b)
 {
   int i = 0;
   char* number = malloc(b.digits + 2); /* extra for sign and '\0' */

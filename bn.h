@@ -12,28 +12,33 @@ typedef struct {
 } bignum_t;
 
 bignum_t bignum_create(int number);
-bignum_t bignum_create_from_string(char* str);
+bignum_t bignum_create_from_string(const char* number);
 bignum_t bignum_reserve(int digits);
-bignum_t bignum_copy(bignum_t b, size_t reserved_size);
-bignum_t bignum_set(bignum_t b, int number);
+bignum_t bignum_copy(bignum_t x, size_t reserved_size);
+bignum_t bignum_set(bignum_t x, int number);
 
-void bignum_destroy(bignum_t* b);
+void bignum_destroy(bignum_t* x);
 void bignum_destroy_multiple(int n_args, ...);
 
-bignum_t bignum_negate(bignum_t b);
-/* -1 => a < b, 1 => a > b, 0 => equal */
-int bignum_compare(bignum_t a, bignum_t b);
-bignum_t bignum_add(bignum_t a, bignum_t b);
-bignum_t bignum_substract(bignum_t a, bignum_t b);
+/*
+ * -1 => x < y, 1 => x > y, 0 => equal
+ */
+int bignum_compare(bignum_t x, bignum_t y);
+bignum_t bignum_negate(bignum_t x);
+bignum_t bignum_add(bignum_t x, bignum_t y);
+bignum_t bignum_substract(bignum_t x, bignum_t y);
 bignum_t bignum_multiply(bignum_t x, bignum_t y);
 
-const char* bignum_stringify(bignum_t b);
-bignum_t bignum_pad(bignum_t b, size_t length, bignum_bit_t digit);
+char* bignum_stringify(bignum_t x);
+bignum_t bignum_pad(bignum_t x, size_t length, bignum_bit_t digit);
 
 /*
- * remove for lib version
+ * split in half, length of head is either equal or one shorter than tail
  */
-void bignum_split(bignum_t b, bignum_t* p1, bignum_t* p2);
-bignum_t bignum_shift(bignum_t b, int times);
+void bignum_split(bignum_t x, bignum_t* tail, bignum_t* head);
+/*
+ * shift left [times] times, i.e. multiply by 10^times
+ */
+bignum_t bignum_shift(bignum_t x, int times);
 
 #endif

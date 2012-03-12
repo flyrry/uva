@@ -1,11 +1,28 @@
 #ifndef __BIGNUM_H__
 #define __BIGNUM_H__
+
+/*
+ * compile with -DSTATIC_BIT_ARRAYS for 100 digit fixed static arrays
+ * or additionally with -DSET_BIT_ARRAY_SIZE=n for custom static arrays size
+ */
+#ifdef STATIC_BIT_ARRAYS
+ #ifdef SET_BIT_ARRAY_SIZE
+  #define BIT_CHUNK_SIZE SET_BIT_ARRAY_SIZE
+ #else
+  #define BIT_CHUNK_SIZE 100
+ #endif
+#else
 #define BIT_CHUNK_SIZE 10
+#endif
 
 typedef char bignum_bit_t;
 
 typedef struct {
+#ifdef STATIC_BIT_ARRAYS
+  bignum_bit_t d[BIT_CHUNK_SIZE];
+#else
   bignum_bit_t* d;    /* pointer to array of bits */
+#endif
   int neg;            /* strictly 1 or 0 */
   int digits;         /* number of digits */
   size_t alloced;     /* number of allocated bits */

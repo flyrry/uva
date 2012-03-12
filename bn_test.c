@@ -13,7 +13,11 @@ void ppb(bignum_t b)
     printf("-");
   for (i = b.digits - 1; i >= 0; --i)
     printf("%d", b.d[i]);
+#ifdef STATIC_BIT_ARRAYS
+  printf(" [negative: %d, digits: %d, alloced: %d]\n", b.neg, b.digits, BIT_CHUNK_SIZE);
+#else
   printf(" [negative: %d, digits: %d, alloced: %d]\n", b.neg, b.digits, b.alloced);
+#endif
 }
 /*
  * remove for lib version

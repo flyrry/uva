@@ -32,7 +32,11 @@ bignum_t bignum_reserve(int digits)
 {
   assert(digits > 0);
   bignum_t b;
+#ifdef STATIC_BIT_ARRAYS
+  memset(b.d, 0, BIT_CHUNK_SIZE);
+#else
   b.d = (bignum_bit_t*) calloc(digits, sizeof(bignum_bit_t));
+#endif
   b.neg = b.digits = 0;
   b.alloced = digits;
   return b;
@@ -40,9 +44,11 @@ bignum_t bignum_reserve(int digits)
 
 void bignum_destroy(bignum_t* b)
 {
+#ifndef STATIC_BIT_ARRAYS
   if (b->alloced)
     free(b->d);
   b->d = NULL;
+#endif
   b->alloced = b->neg = b->digits = 0;
 }
 
@@ -53,9 +59,11 @@ void bignum_destroy_multiple(int n_args, ...)
   while (n_args--)
   {
     bignum_t* b = va_arg(ap, bignum_t*);
+#ifndef STATIC_BIT_ARRAYS
     if (b->alloced)
       free(b->d);
     b->d = NULL;
+#endif
     b->alloced = b->neg = b->digits = 0;
   }
   va_end(ap);

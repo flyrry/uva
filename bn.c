@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
@@ -225,6 +226,33 @@ bignum_t bignum_multiply(bignum_t x, bignum_t y)
   return result;
 }
 
+bignum_t bignum_divide(bignum_t n, bignum_t d)
+{
+  int i;
+  bignum_t r = bignum_create(0);
+  bignum_t q = bignum_reserve(n.digits);
+  q.digits = n.digits;
+  for (i = n.digits - 1; i >= 0; --i)
+  {
+    bignum_t r_tmp = bignum_shift(r, 1);
+    bignum_destroy(&r);
+    r = r_tmp;
+    r.d[0] = n.d[i];
+    while (bignum_compare(r, d) >= 0)
+    {
+      ++q.d[i];
+      r_tmp = bignum_substract(r, d);
+      bignum_destroy(&r);
+      r = r_tmp;
+    }
+  }
+  bignum_destroy(&r);
+  while (!q.d[q.digits - 1] && (q.digits - 1)) /* trim trailing 0s */
+    --q.digits;
+  q.neg = (n.neg ^ d.neg);
+  return q;
+}
+
 /*
  * internal 
  */
@@ -262,6 +290,8 @@ bignum_t bignum_shift(bignum_t b, int times)
     result.d[i] = 0;
   for (; i < result.digits; ++i)
     result.d[i] = b.d[i - times];
+  while (!result.d[result.digits - 1] && (result.digits - 1)) /* trim trailing 0s */
+    --result.digits;
   return result;
 }
 

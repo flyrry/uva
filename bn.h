@@ -28,6 +28,7 @@ bignum_t bignum_negate(bignum_t x);
 bignum_t bignum_add(bignum_t x, bignum_t y);
 bignum_t bignum_substract(bignum_t x, bignum_t y);
 bignum_t bignum_multiply(bignum_t x, bignum_t y);
+bignum_t bignum_divide(bignum_t x, bignum_t y);
 
 char* bignum_stringify(bignum_t x);
 bignum_t bignum_pad(bignum_t x, size_t length, bignum_bit_t digit);

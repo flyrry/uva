@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <string.h>
 #include "bn.h"
 
 /*
@@ -23,6 +24,21 @@ bignum_t* bignum_create(int number)
 {
   bignum_t* b = bignum_reserve(BIT_CHUNK_SIZE);
   bignum_set(b, number);
+  return b;
+}
+
+bignum_t* bignum_create_from_string(char* str)
+{
+  int has_sign = 0, i;
+  size_t len = strlen(str);
+  printf("length: %d, str: %s\n", len, str);
+  bignum_t* b = bignum_reserve(len);
+  b->neg = (str[0] == '-');
+  if (str[0] == '-' || str[0] == '+')
+    has_sign = 1;
+  b->digits = len - has_sign;
+  for (i = has_sign; i < len; ++i)
+    b->d[len - i - 1] = str[i] - '0';
   return b;
 }
 
@@ -151,16 +167,6 @@ bignum_t* bignum_add(bignum_t* a, bignum_t* b)
 bignum_t* bignum_substract(bignum_t* a, bignum_t* b)
 {
   /* shallow copy arguments before negating to leave them unaffected */
-  /*
-  if (a->neg && b->neg)
-    return bignum_substract(bignum_copy_s(bignum_negate(b)), a);
-  if (a->neg && !b->neg)
-    return bignum_negate(bignum_add(bignum_copy_s(bignum_negate(a)), b));
-  if (!a->neg && b->neg)
-    return bignum_add(a, bignum_copy_s(bignum_negate(b)));
-  if (bignum_compare(a, b) == -1)
-    return bignum_negate(bignum_substract(b, a));
-  */
   if (a->neg && b->neg)
     return bignum_substract(bignum_negate(bignum_copy_s(b)), a);
   if (a->neg && !b->neg)
@@ -327,8 +333,7 @@ bignum_t* bignum_multiply(bignum_t* x, bignum_t* y)
   printf("result: ");
   ppb(result);
   */
-  /*bignum_destroy_multiple(16, x1, x2, y1, y2, a, b, s1, s2, c, sab, k, _100, _10, a100, k10, ak);*/
-  printf("%d %d\n", x->neg, y->neg);
+  /*bignum_destroy_multiple(16, x1, x2, y1, y2, xp, yp, a, b, s1, s2, c, sab, k, a_rebased, k_rebased, ak);*/
   result->neg = (x->neg ^ y->neg);
   return result;
 }
@@ -358,14 +363,33 @@ int main()
   ppb(first);
   printf("second half: ");
   ppb(second);
+  bignum_t* s100 = bignum_shift(first, 2);
   printf("* 100 = ");
-  ppb(bignum_shift(first, 2));
+  ppb(s100);
+  bignum_t* s10 = bignum_shift(second, 1);
   printf("* 10 = ");
-  ppb(bignum_shift(second, 1));
-  printf("a * b = ");
-  bignum_t* x = bignum_create(-1234);
-  bignum_t* y = bignum_create(5678);
-  bignum_t* product = bignum_multiply(a, b);
+  ppb(s10);
+  bignum_t* x = bignum_create(22);
+  /*bignum_t* y = bignum_create_from_string("-222222222222222222222222");*/
+  bignum_t* y = bignum_create_from_string("100000000000");
+  ppb(x);
+  ppb(y);
+  bignum_t* product = bignum_multiply(x, y);
   ppb(product);
+  printf("a * b = ");
+  ppb(product);
+
+  bignum_destroy(a);
+  bignum_destroy(b);
+  bignum_destroy(result);
+  bignum_destroy(diff);
+  bignum_destroy(first);
+  bignum_destroy(second);
+  bignum_destroy(s100);
+  bignum_destroy(s10);
+  bignum_destroy(x);
+  bignum_destroy(y);
+  bignum_destroy(product);
   return 0;
 }
+

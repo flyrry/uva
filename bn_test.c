@@ -91,6 +91,10 @@ int main()
   printf("%s / %s = ", y_str, x_str);
   q = bignum_divide(y, x);
   ppb(q);
+  bignum_destroy(&q);
+  printf("%s / %s = ", extra_long_y, x_str);
+  q = bignum_divide(e_y, x);
+  ppb(q);
 
   bignum_destroy(&a);
   bignum_destroy(&b);

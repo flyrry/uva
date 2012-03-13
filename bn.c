@@ -10,6 +10,8 @@ int max(int a, int b);
 bignum_t take_n(bignum_t x, int times);
 bignum_t bignum_pad(bignum_t x, size_t length, bignum_bit_t digit);
 
+#define BIGNUM_BASE 10
+
 bignum_t bignum_create(int number)
 {
   return bignum_set(bignum_reserve(BIT_CHUNK_SIZE), number);
@@ -76,8 +78,8 @@ bignum_t bignum_set(bignum_t b, int number)
     b.neg = !!(number = -number); /* abs */
   while (number)
   {
-    b.d[b.digits++] = (number % 10);
-    number /= 10;
+    b.d[b.digits++] = (number % BIGNUM_BASE);
+    number /= BIGNUM_BASE;
   }
   if (!b.digits) /* number = 0 case */
     b.digits = 1;
@@ -142,9 +144,9 @@ bignum_t bignum_add(bignum_t a, bignum_t b)
     ba = (i < a.digits) ? (a.neg ? -a.d[i] : a.d[i]) : 0;
     bb = (i < b.digits) ? (b.neg ? -b.d[i] : b.d[i]) : 0;
     sum = ba + bb + bcarry;
-    bcarry = sum / 10;
+    bcarry = sum / BIGNUM_BASE;
     sum = (sum < 0) ? -sum : sum;
-    result.d[i] = sum % 10;
+    result.d[i] = sum % BIGNUM_BASE;
   }
 
   while (!result.d[result.digits - 1] && (result.digits - 1)) /* trim trailing 0s */
@@ -176,7 +178,7 @@ bignum_t bignum_substract(bignum_t a, bignum_t b)
     bb = (i < b.digits) ? b.d[i] : 0;
     diff = ba - bb - bcarry;
     bcarry = diff < 0;
-    diff = (diff < 0) ? 10 + diff : diff;
+    diff = (diff < 0) ? BIGNUM_BASE + diff : diff;
     result.d[i] = diff;
   }
 
@@ -204,6 +206,9 @@ bignum_t bignum_pad(bignum_t b, size_t length, bignum_bit_t digit)
   return result;
 }
 
+/*
+ * Karatsuba multiplication
+ */
 bignum_t bignum_multiply(bignum_t x, bignum_t y)
 {
   if (x.digits == 1)
@@ -224,7 +229,7 @@ bignum_t bignum_multiply(bignum_t x, bignum_t y)
   bignum_t sab = bignum_add(a, b);
   bignum_t k = bignum_substract(c, sab);
   int shift_digits = min(x1.digits, x2.digits);
-  bignum_t a_rebased = bignum_shift(a, 2 * shift_digits);
+  bignum_t a_rebased = bignum_shift(a, shift_digits << 1);
   bignum_t k_rebased = bignum_shift(k, shift_digits);
   bignum_t ak = bignum_add(a_rebased, k_rebased);
   bignum_t result = bignum_add(ak, b);
@@ -269,8 +274,13 @@ bignum_t bignum_divide(bignum_t n, bignum_t d)
 
 bignum_t bignum_divide(bignum_t x, bignum_t y)
 {
+  return bignum_divide_with_remainder(x, y, NULL);
+}
+
+bignum_t bignum_divide_with_remainder(bignum_t x, bignum_t y, bignum_t* remainder)
+{
   assert(!(y.digits == 1 && y.d[0] == 0));
-  bignum_t q, remainder;
+  bignum_t q;
   /* copy to work with unsigned */
   bignum_t n = bignum_copy(x, 0);
   n.neg = 0;
@@ -280,13 +290,20 @@ bignum_t bignum_divide(bignum_t x, bignum_t y)
   int cmp = bignum_compare(n, d);
   if (cmp < 0) /* integer division gives 0 */
   {
-    remainder = x;
+    if (remainder)
+      *remainder = n;
+    else
+      bignum_destroy(&n);
+    bignum_destroy(&d);
     return bignum_create(0);
   }
 
   if (!cmp)
   {
-    remainder = bignum_create(0);
+    if (remainder)
+      *remainder = bignum_create(0);
+    bignum_destroy(&n);
+    bignum_destroy(&d);
     q = bignum_create(1);
     q.neg = (x.neg ^ y.neg);
     return q;
@@ -314,10 +331,10 @@ bignum_t bignum_divide(bignum_t x, bignum_t y)
   for (i = 0; i <= zeros; ++i)
   {
     n_sig = n.d[n.digits-1];
-    int guess = (n_sig * 10 + n.d[n.digits-2]) / d_sig;
+    int guess = (n_sig * BIGNUM_BASE + n.d[n.digits-2]) / d_sig;
 
-    if (guess >= 10)
-      guess = 9;
+    if (guess >= BIGNUM_BASE)
+      guess = BIGNUM_BASE - 1;
 
     /* find largest chunk to substract from [n] */
     bignum_t max_chunk;
@@ -345,8 +362,13 @@ bignum_t bignum_divide(bignum_t x, bignum_t y)
     d = d_rebased;
     d_sig = d.d[d.digits-1];
   }
+
   bignum_destroy(&d);
-  bignum_destroy(&n);
+
+  if (remainder)
+    *remainder = n;
+  else
+    bignum_destroy(&n);
 
   q.neg = (x.neg ^ y.neg);
   return q;

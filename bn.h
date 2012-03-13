@@ -46,6 +46,9 @@ bignum_t bignum_add(bignum_t x, bignum_t y);
 bignum_t bignum_substract(bignum_t x, bignum_t y);
 bignum_t bignum_multiply(bignum_t x, bignum_t y);
 bignum_t bignum_divide(bignum_t x, bignum_t y);
+#ifndef USE_SLOW_DIVISION
+bignum_t bignum_divide_with_remainder(bignum_t x, bignum_t y, bignum_t* remainder);
+#endif
 
 char* bignum_stringify(bignum_t x);
 

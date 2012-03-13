@@ -95,6 +95,28 @@ int main()
   printf("%s / %s = ", extra_long_y, x_str);
   q = bignum_divide(e_y, x);
   ppb(q);
+  const char* correct_lq = "294518366197211784463293253118231940260987081252065310164038161410854917791096102036569733959634944133413258640247294504222496275653443906701984298714357774363645580733178706654911216997336623812946953929602703";
+  char* lq_str = bignum_stringify(q);
+  printf("long quotient is %s\n", (!strcmp(lq_str, correct_lq)) ? "correct" : "NOT correct");
+  free(lq_str);
+#ifndef USE_SLOW_DIVISION
+  bignum_destroy(&q);
+  bignum_t r;
+  q = bignum_divide_with_remainder(n, d, &r);
+  printf("0 %% 144 = ");
+  ppb(r);
+  bignum_destroy(&r);
+  bignum_destroy(&q);
+  q = bignum_divide_with_remainder(d, d, &r);
+  printf("144 %% 144 = ");
+  ppb(r);
+  bignum_destroy(&r);
+  bignum_destroy(&q);
+  q = bignum_divide_with_remainder(e_y, x, &r);
+  printf("%s %% %s = ", extra_long_y, x_str);
+  ppb(r);
+  bignum_destroy(&r);
+#endif
 
   bignum_destroy(&a);
   bignum_destroy(&b);

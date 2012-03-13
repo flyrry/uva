@@ -13,7 +13,11 @@ void ppb(bignum_t b)
     printf("-");
   for (i = b.digits - 1; i >= 0; --i)
     printf("%d", b.d[i]);
+#ifdef STATIC_BIT_ARRAYS
+  printf(" [negative: %d, digits: %d, alloced: %d]\n", b.neg, b.digits, BIT_CHUNK_SIZE);
+#else
   printf(" [negative: %d, digits: %d, alloced: %d]\n", b.neg, b.digits, b.alloced);
+#endif
 }
 /*
  * remove for lib version
@@ -74,11 +78,45 @@ int main()
   char* lp_str = bignum_stringify(long_product);
   printf("long product is %s\n", (!strcmp(lp_str, correct_lp)) ? "correct" : "NOT correct");
   free(lp_str);
-  bignum_t n = bignum_create(-145);
+  bignum_t n = bignum_create(0);
   bignum_t d = bignum_create(144);
-  printf("-145 / 144 = ");
+  printf("0 / 144 = ");
   bignum_t q = bignum_divide(n, d);
   ppb(q);
+  bignum_destroy(&q);
+  printf("144 / -144 = ");
+  q = bignum_divide(d, bignum_negate(d));
+  ppb(q);
+  bignum_destroy(&q);
+  printf("%s / %s = ", y_str, x_str);
+  q = bignum_divide(y, x);
+  ppb(q);
+  bignum_destroy(&q);
+  printf("%s / %s = ", extra_long_y, x_str);
+  q = bignum_divide(e_y, x);
+  ppb(q);
+  const char* correct_lq = "294518366197211784463293253118231940260987081252065310164038161410854917791096102036569733959634944133413258640247294504222496275653443906701984298714357774363645580733178706654911216997336623812946953929602703";
+  char* lq_str = bignum_stringify(q);
+  printf("long quotient is %s\n", (!strcmp(lq_str, correct_lq)) ? "correct" : "NOT correct");
+  free(lq_str);
+#ifndef USE_SLOW_DIVISION
+  bignum_destroy(&q);
+  bignum_t r;
+  q = bignum_divide_with_remainder(n, d, &r);
+  printf("0 %% 144 = ");
+  ppb(r);
+  bignum_destroy(&r);
+  bignum_destroy(&q);
+  q = bignum_divide_with_remainder(d, d, &r);
+  printf("144 %% 144 = ");
+  ppb(r);
+  bignum_destroy(&r);
+  bignum_destroy(&q);
+  q = bignum_divide_with_remainder(e_y, x, &r);
+  printf("%s %% %s = ", extra_long_y, x_str);
+  ppb(r);
+  bignum_destroy(&r);
+#endif
 
   bignum_destroy(&a);
   bignum_destroy(&b);

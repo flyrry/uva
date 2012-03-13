@@ -8,6 +8,7 @@
 int min(int a, int b);
 int max(int a, int b);
 bignum_t take_n(bignum_t x, int times);
+bignum_t bignum_pad(bignum_t x, size_t length, bignum_bit_t digit);
 
 bignum_t bignum_create(int number)
 {
@@ -108,6 +109,8 @@ bignum_t bignum_negate(bignum_t b)
 int bignum_compare(bignum_t a, bignum_t b)
 {
   int i;
+  /* TODO: this would break in case of 0 padded bignum? */
+  /* keeping as is, since bignum_pad is internal */
   if (a.digits < b.digits)
     return (2*b.neg - 1);
   if (a.digits > b.digits)
@@ -234,6 +237,7 @@ bignum_t bignum_multiply(bignum_t x, bignum_t y)
   return result;
 }
 
+#ifdef USE_SLOW_DIVISION
 bignum_t bignum_divide(bignum_t n, bignum_t d)
 {
   int i;
@@ -260,6 +264,94 @@ bignum_t bignum_divide(bignum_t n, bignum_t d)
   q.neg = (n.neg ^ d.neg);
   return q;
 }
+
+#else
+
+bignum_t bignum_divide(bignum_t x, bignum_t y)
+{
+  assert(!(y.digits == 1 && y.d[0] == 0));
+  bignum_t q, remainder;
+  /* copy to work with unsigned */
+  bignum_t n = bignum_copy(x, 0);
+  n.neg = 0;
+  bignum_t d = bignum_copy(y, 0);
+  d.neg = 0;
+
+  int cmp = bignum_compare(n, d);
+  if (cmp < 0) /* integer division gives 0 */
+  {
+    remainder = x;
+    return bignum_create(0);
+  }
+
+  if (!cmp)
+  {
+    remainder = bignum_create(0);
+    q = bignum_create(1);
+    q.neg = (x.neg ^ y.neg);
+    return q;
+  }
+
+  int zeros = n.digits - d.digits;
+
+  bignum_t d_rebased = bignum_shift(d, zeros);
+  bignum_destroy(&d);
+  d = d_rebased;
+
+  /* shift back once if [d] is now greater than [n] */
+  if (bignum_compare(d, n) > 0)
+  {
+    d_rebased = bignum_unshift(d, 1);
+    bignum_destroy(&d);
+    d = d_rebased;
+    --zeros;
+  }
+
+  int i;
+  int d_sig = d.d[d.digits-1];
+  int n_sig;
+  q = bignum_create(0);
+  for (i = 0; i <= zeros; ++i)
+  {
+    n_sig = n.d[n.digits-1];
+    int guess = (n_sig * 10 + n.d[n.digits-2]) / d_sig;
+
+    if (guess >= 10)
+      guess = 9;
+
+    /* find largest chunk to substract from [n] */
+    bignum_t max_chunk;
+    while (bignum_compare(max_chunk = take_n(d, guess), n) > 0)
+    {
+      --guess;
+      bignum_destroy(&max_chunk);
+    }
+
+    /* write to [q] that [d] got substracted [guess] times at current base */
+    /* substract that from [n] */
+    /* step [d] down one base */
+    bignum_t b_guess = bignum_create(guess);
+    bignum_t q_rebased = bignum_shift(q, 1);
+    bignum_destroy(&q);
+    q = bignum_add(q_rebased, b_guess);
+    bignum_destroy(&q_rebased);
+    bignum_destroy(&b_guess);
+    bignum_t n_shrunk = bignum_substract(n, max_chunk);
+    bignum_destroy(&n);
+    n = n_shrunk;
+    bignum_destroy(&max_chunk);
+    d_rebased = bignum_unshift(d, 1);
+    bignum_destroy(&d);
+    d = d_rebased;
+    d_sig = d.d[d.digits-1];
+  }
+  bignum_destroy(&d);
+  bignum_destroy(&n);
+
+  q.neg = (x.neg ^ y.neg);
+  return q;
+}
+#endif
 
 /*
  * internal 
@@ -298,6 +390,20 @@ bignum_t bignum_shift(bignum_t b, int times)
     result.d[i] = 0;
   for (; i < result.digits; ++i)
     result.d[i] = b.d[i - times];
+  while (!result.d[result.digits - 1] && (result.digits - 1)) /* trim trailing 0s */
+    --result.digits;
+  return result;
+}
+
+bignum_t bignum_unshift(bignum_t b, int times)
+{
+  int i;
+  if (times >= b.digits)
+    return bignum_create(0);
+  bignum_t result = bignum_reserve(b.digits - times);
+  result.digits = b.digits - times;
+  for (i = times; i < b.digits; ++i)
+    result.d[i - times] = b.d[i];
   while (!result.d[result.digits - 1] && (result.digits - 1)) /* trim trailing 0s */
     --result.digits;
   return result;

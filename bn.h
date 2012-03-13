@@ -48,7 +48,6 @@ bignum_t bignum_multiply(bignum_t x, bignum_t y);
 bignum_t bignum_divide(bignum_t x, bignum_t y);
 
 char* bignum_stringify(bignum_t x);
-bignum_t bignum_pad(bignum_t x, size_t length, bignum_bit_t digit);
 
 /*
  * split in half, length of head is either equal or one shorter than tail
@@ -58,5 +57,9 @@ void bignum_split(bignum_t x, bignum_t* tail, bignum_t* head);
  * shift left [times] times, i.e. multiply by 10^times
  */
 bignum_t bignum_shift(bignum_t x, int times);
+/*
+ * shift right [times] times, i.e. divide by 10^times
+ */
+bignum_t bignum_unshift(bignum_t b, int times);
 
 #endif

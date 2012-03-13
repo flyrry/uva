@@ -78,10 +78,18 @@ int main()
   char* lp_str = bignum_stringify(long_product);
   printf("long product is %s\n", (!strcmp(lp_str, correct_lp)) ? "correct" : "NOT correct");
   free(lp_str);
-  bignum_t n = bignum_create(-145);
+  bignum_t n = bignum_create(0);
   bignum_t d = bignum_create(144);
-  printf("-145 / 144 = ");
+  printf("0 / 144 = ");
   bignum_t q = bignum_divide(n, d);
+  ppb(q);
+  bignum_destroy(&q);
+  printf("144 / -144 = ");
+  q = bignum_divide(d, bignum_negate(d));
+  ppb(q);
+  bignum_destroy(&q);
+  printf("%s / %s = ", y_str, x_str);
+  q = bignum_divide(y, x);
   ppb(q);
 
   bignum_destroy(&a);

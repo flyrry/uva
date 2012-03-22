@@ -5,15 +5,15 @@ typedef long long llong;
 
 llong target, sum;  /* target number (we're looking for it) and current sum */
 llong n;            /* last number (or part of it) read */
-int p;              /* stack pointer */
-int depth;          /* current depth level in the tree */
-char c;             /* last character read from stdin */
-short found;        /* did we find our target number in this tree? */
-short leaf;         /* is it leaf? */
-short sign;
-char prev;
 
 int main(void) {
+  register int p;              /* stack pointer */
+  register int depth;          /* current depth level in the tree */
+  register char c;             /* last character read from stdin */
+  register short found;        /* did we find our target number in this tree? */
+  register short leaf;         /* is it leaf? */
+  register short sign;
+  register char prev;
   llong stack[10000]; /* stack to hold node numbers */
   for (;;) {
     scanf("%lld", &target);

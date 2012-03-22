@@ -89,7 +89,7 @@ bignum_t bignum_set(bignum_t b, int number)
 char* bignum_stringify(bignum_t b)
 {
   int i = 0;
-  char* number = malloc(b.digits + 2); /* extra for sign and '\0' */
+  char* number = (char*)malloc(b.digits + 2); /* extra for sign and '\0' */
   if (b.neg)
   {
     number[0] = '-';
@@ -374,6 +374,40 @@ bignum_t bignum_divide_with_remainder(bignum_t x, bignum_t y, bignum_t* remainde
   return q;
 }
 #endif
+
+bignum_t bignum_fac(bignum_t b)
+{
+  bignum_t product = bignum_create(1);
+  bignum_t one = bignum_create(1);
+  bignum_t i = bignum_create(1);
+  for (; bignum_compare(i, b) <= 0;)
+  {
+    bignum_t tproduct = bignum_multiply(product, i);
+    bignum_destroy(&product);
+    product = tproduct;
+
+    /* i++ */
+    bignum_t ti = bignum_add(i, one);
+    bignum_destroy(&i);
+    i = ti;
+  }
+  bignum_destroy(&i);
+  bignum_destroy(&one);
+  return product;
+}
+
+bignum_t bignum_pow(bignum_t b, int n)
+{
+  bignum_t product = bignum_create(1);
+  int i;
+  for (i = 0; i < n; ++i)
+  {
+    bignum_t tproduct = bignum_multiply(product, b);
+    bignum_destroy(&product);
+    product = tproduct;
+  }
+  return product;
+}
 
 /*
  * internal 

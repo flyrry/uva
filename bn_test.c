@@ -117,7 +117,18 @@ int main()
   ppb(r);
   bignum_destroy(&r);
 #endif
+  bignum_t n5 = bignum_create(49);
+  bignum_t fact5 = bignum_fac(n5);
+  printf("49! = ");
+  ppb(fact5);
+  bignum_t n5pow5 = bignum_pow(n5, 55);
+  printf("49^55 = ");
+  ppb(n5pow5);
 
+
+  bignum_destroy(&n5);
+  bignum_destroy(&n5pow5);
+  bignum_destroy(&fact5);
   bignum_destroy(&a);
   bignum_destroy(&b);
   bignum_destroy(&result);

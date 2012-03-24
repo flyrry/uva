@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 
 typedef struct {
   int buf[52][2];
@@ -43,17 +44,33 @@ const char* str_p1 = "pile";
 const char* str_p2 = "piles";
 const char* str_r = "remaining:";
 
+#define BUFF_SIZE 1024*1024*3
+#define INPUT 26 * 3 * 2
+
 int main(void) {
+  char in[BUFF_SIZE], out[BUFF_SIZE];
+  register ssize_t wsz = 0, rsz, trsz; /* written bytes, read bytes and total processed bytes */
   for (;;) {
+    trsz = 0;
+    while ((INPUT - trsz) && (rsz = read(0, in + trsz, INPUT - trsz)) > 0) trsz += rsz;
+    /*printf("%ld chars read\n", rsz);*/
+    register char* f = in;
     register pile* prev = 0;
     register pile* p;
     register pile* last;
     p = deck;
     for (p = deck;; ++p) {
+      /*
       c = fgetc(stdin);
       v = fgetc(stdin);
-      if (c == '#') return 0;
+      */
+      c = *f++;
+      if (c == '#') goto end;
+      v = *f++;
+      /*
       fgetc(stdin);
+      */
+      f++;
       reset(&p->cards);
       push(&p->cards, c, v);
       p->prev = prev;
@@ -97,11 +114,46 @@ int main(void) {
       ++sz;
       p = p->prev;
     }
+
+    if (sz > 9)
+      out[wsz++] = sz / 10 + '0';
+    out[wsz++] = sz % 10 + '0';
+    out[wsz++] = ' ';
+    register const char* of;
+    if (sz == 1)
+      of = str_p1;
+    else
+      of = str_p2;
+    while (*of) out[wsz++] = *of++;
+    out[wsz++] = ' ';
+    of = str_r;
+    while (*of) out[wsz++] = *of++;
+
+    /*
+     * above is equal to this
     printf("%d %s %s", sz, (sz == 1) ? str_p1 : str_p2, str_r);
+    */
+
+    while (p) {
+      sz = size(&p->cards);
+      out[wsz++] = ' ';
+      if (sz > 9)
+        out[wsz++] = sz / 10 + '0';
+      out[wsz++] = sz % 10 + '0';
+      p = p->next;
+    }
+    out[wsz++] = '\n';
+    /*
+     * above is equal to this
     while (p) {
       printf(" %d", size(&p->cards));
       p = p->next;
     }
     printf("\n");
+    */
   }
+end:
+  trsz = 0;
+  while ((trsz = write(1, out, wsz - trsz)) > 0);
+  return 0;
 }

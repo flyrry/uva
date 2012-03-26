@@ -27,7 +27,7 @@ void walk() {
   sort(paths.begin(), paths.end(), scomp);
   vector<string>::iterator i(paths.begin());
   cout << nodes[*i];
-  for(++i; i != paths.end(); ++i) {
+  for (++i; i != paths.end(); ++i) {
     cout << " " << nodes[*i];
   }
   cout << endl;

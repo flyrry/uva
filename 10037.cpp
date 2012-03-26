@@ -43,7 +43,7 @@ int main(void) {
           left.clear();
           break;
         default:
-          if(left[0] + left[left.size()-2] < 2 * left[1]) {
+          if (left[0] + left[left.size()-2] < 2 * left[1]) {
             j = left.back();
             left.pop_back();
             sum += j + left[0];

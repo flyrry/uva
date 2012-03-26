@@ -27,7 +27,7 @@ int find_green(char sig[]) {
 	/* skip initial green */
 	while (!sig[i++]);
 	/* now find first green */
-	for (; i < TIME; i++) {
+	for (; i < TIME; ++i) {
 		if (!sig[i]) return i;
 	}
 	return -1;

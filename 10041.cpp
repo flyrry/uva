@@ -14,12 +14,12 @@ int main(void) {
   while (n--) {
     memset(str, 0, sizeof str);
     cin >> r;
-    for(int i = 0; i < r; ++i) {
+    for (int i = 0; i < r; ++i) {
       cin >> s;
       str[i][0] = s;
     }
     for (int i = 0; i < r; ++i) {
-      for(int j = 0; j < r; ++j) {
+      for (int j = 0; j < r; ++j) {
         str[i][1] += abs(str[i][0] - str[j][0]);
       }
     }

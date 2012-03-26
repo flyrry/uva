@@ -16,9 +16,9 @@ int main (void) {
  
   primes[1] = (char)0;
 
-  for (i = 2; i <= (int)sqrt(MAX); i++)
+  for (i = 2; i <= (int)sqrt(MAX); ++i)
     if (primes[i])
-      for (j=i; j*i<MAX;j++) primes[i*j] = 0;
+      for (j=i; j*i<MAX;++j) primes[i*j] = 0;
 
   for (i = 5; i < MAX; i += 2) {
     if (primes[i] == 1 && primes[i-2] == 1) {

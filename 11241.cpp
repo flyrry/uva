@@ -37,7 +37,7 @@ int main(void) {
 
     ss << input;
     _t = _d = _h = false;
-    while(ss >> c) {
+    while (ss >> c) {
       switch(c) {
 	case 'T':
 	  ss >> t;
@@ -54,12 +54,11 @@ int main(void) {
       }
     }
 
-    if(!_d) d = compute_d(t,h);
-    else if(!_t) t = compute_t(d,h);
-    else if(!_h) h = compute_h(d,t);
+    if (!_d) d = compute_d(t,h);
+    else if (!_t) t = compute_t(d,h);
+    else if (!_h) h = compute_h(d,t);
 
     cout << fixed << setprecision(1) << "T " << t << " D " << d << " H " << h << endl;
   }
   return 0;
-
 }

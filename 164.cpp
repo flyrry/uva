@@ -10,10 +10,10 @@ void command(string& from, string& to) {
   int n = to.size();
   int dp[m+1][n+1];
 
-  for(int i = 0; i <= m; ++i)
+  for (int i = 0; i <= m; ++i)
     dp[i][0] = i;
 
-  for(int j = 0; j <= n; ++j)
+  for (int j = 0; j <= n; ++j)
     dp[0][j] = j;
 
   int cost;

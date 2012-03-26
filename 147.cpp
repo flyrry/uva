@@ -13,8 +13,8 @@ int main(void) {
 	for (int i = 0; i < 11; ++i)
 		ways[0][i] = 1;
 	
-	for(int x = 1; x < 6001; ++x) {
-		for(int y = 1; y < 11; ++y) {
+	for (int x = 1; x < 6001; ++x) {
+		for (int y = 1; y < 11; ++y) {
 			if (money[y] > x) {
 				ways[x][y] = ways[x][y-1];
 			} else {

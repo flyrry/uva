@@ -63,7 +63,7 @@ int main(void) {
           }
           nodes[n.id].visited = true;
           q.pop();
-          for(vector<edge>::iterator i(edges[n.id].begin()), end(edges[n.id].end()); i != end; ++i) {
+          for (vector<edge>::iterator i(edges[n.id].begin()), end(edges[n.id].end()); i != end; ++i) {
             if (nodes[i->to].visited) continue;
             if (nodes[i->to].dist > n.dist + i->w) nodes[i->to].dist = n.dist + i->w;
             q.push(nodes[i->to]);

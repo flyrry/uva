@@ -52,7 +52,7 @@ string cd;
 pile* prev;
 /*
 void ddeck() {
-  for(int i = 0; i < 52; ++i)
+  for (int i = 0; i < 52; ++i)
     cout << &deck[i] << " " << i << ": " << (char)deck[i].cards.topv() << (char)deck[i].cards.tops() << " " << deck[i].prev << " " << deck[i].next << " " << deck[i].cards.size() << endl;
 }
 */
@@ -86,7 +86,7 @@ int main(void) {
       }
       pile* p1 = 0;
       if (!m && (p1 = p->prev)) {
-        if(p1->cards.topv() == p->cards.topv() || p1->cards.tops() == p->cards.tops()) {
+        if (p1->cards.topv() == p->cards.topv() || p1->cards.tops() == p->cards.tops()) {
           m = p1;
         }
       }

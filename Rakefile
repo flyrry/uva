@@ -1,6 +1,6 @@
 require 'rake/clean'
 
-CLEAN.include %w( in out test a.out *.class )
+CLEAN.include %w( in* out* test* a.out *.class )
 COMPILER_FOR = {"cpp" => "g++", "c" => "gcc", "java" => "javac" }
 FLAGS_FOR = { "cpp" => "-lm -lcrypt -O2 -pipe -DONLINE_JUDGE",
               "c" => "-lm -lcrypt -O2 -pipe -ansi -DONLINE_JUDGE",

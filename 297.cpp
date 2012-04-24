@@ -30,15 +30,6 @@ int count_pixels(const string& tree, int& pos, int factor) {
   return sum;
 }
 
-template<typename T> void walk_subtree(const string& tree, int& pos, T operation) {
-  for (int i(0); i < 4; ++i) {
-    if (tree[++pos] == 'p') walk_subtree(tree, pos, operation);
-    else {
-      operation(tree[pos]);
-    }
-  }
-}
-
 int main()
 {
   ios::sync_with_stdio(false);

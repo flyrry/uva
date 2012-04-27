@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cstdio>
 #include <vector>
 
 using namespace std;
@@ -32,12 +32,11 @@ short compute_score(roll_list& rolls) {
 
 int main()
 {
-  ios::sync_with_stdio(false);
   roll_list rolls;
   char c;
-  while (cin.get(c)) {
+  while ((c = getchar_unlocked()) != EOF) {
     if (c == '\n') {
-      cout << compute_score(rolls) << endl;
+      printf("%d\n", compute_score(rolls));
       rolls.clear();
       continue;
     }

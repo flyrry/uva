@@ -12,9 +12,7 @@ task :build, :target do |t, args|
     target = args.target || Dir.glob("*").reject {|f| (f =~ /\.(c|cpp|java)$/).nil?}.max_by {|f| File.mtime(f)}
     puts "building #{target}"
     extension = target.split('.').last
-    compiler = COMPILER_FOR[extension]
-    flags = FLAGS_FOR[extension]
-    sh "#{compiler} #{flags} #{target}"
+    sh "#{COMPILER_FOR[extension]} #{FLAGS_FOR[extension]} #{target}"
   rescue
     fail "Nothing to build"
   end
